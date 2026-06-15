@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function App() {
   const canvasRef = useRef(null);
@@ -22,36 +22,6 @@ export default function App() {
         if (inputs.length) setSelectedDevice(inputs[0].deviceId);
       });
   }, []);
-
-  useEffect(() => {
-    if (!selectedDevice) return;
-
-    navigator.mediaDevices
-      .getUserMedia({ audio: { deviceId: { exact: selectedDevice } } })
-      .then((stream) => {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const src = ctx.createMediaStreamSource(stream);
-
-        // ✅ low-pass filter (smooth signal)
-        const filter = ctx.createBiquadFilter();
-        filter.type = "lowpass";
-        filter.frequency.value = 1500;
-
-        const analyser = ctx.createAnalyser();
-        analyser.fftSize = 1024;
-
-        const data = new Float32Array(analyser.fftSize);
-
-        src.connect(filter);
-        filter.connect(analyser);
-        analyserRef.current = analyser;
-        dataRef.current = data;
-
-        initGL();
-      });
-
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [selectedDevice, mode]);
 
   const initGL = () => {
     const canvas = canvasRef.current;
@@ -196,6 +166,36 @@ export default function App() {
 
     draw(0);
   };
+
+  useEffect(() => {
+    if (!selectedDevice) return;
+
+    navigator.mediaDevices
+      .getUserMedia({ audio: { deviceId: { exact: selectedDevice } } })
+      .then((stream) => {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const src = ctx.createMediaStreamSource(stream);
+
+        // ✅ low-pass filter (smooth signal)
+        const filter = ctx.createBiquadFilter();
+        filter.type = "lowpass";
+        filter.frequency.value = 1500;
+
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 1024;
+
+        const data = new Float32Array(analyser.fftSize);
+
+        src.connect(filter);
+        filter.connect(analyser);
+        analyserRef.current = analyser;
+        dataRef.current = data;
+
+        initGL();
+      });
+
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [selectedDevice, mode]);
 
   return (
     <div style={{ overflow: "hidden", background: "black" }}>
